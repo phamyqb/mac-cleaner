@@ -14,21 +14,21 @@ async function removeDir(p) {
 }
 
 export const cleaners = {
-  npm: () => removeDir(join(H, '.npm', '_cacache')),
+  npm: async () => removeDir(join(H, '.npm', '_cacache')),
 
-  yarn: () => execAsync('yarn cache clean'),
+  yarn: async () => execAsync('yarn cache clean'),
 
-  pnpm: () => execAsync('pnpm store prune'),
+  pnpm: async () => execAsync('pnpm store prune'),
 
-  cocoapods: () => execAsync('pod cache clean --all'),
+  cocoapods: async () => execAsync('pod cache clean --all'),
 
-  typescript: () => removeDir(join(H, 'Library', 'Caches', 'typescript')),
+  typescript: async () => removeDir(join(H, 'Library', 'Caches', 'typescript')),
 
-  cypress: () => execAsync('npx cypress cache clear'),
+  cypress: async () => execAsync('npx cypress cache clear'),
 
-  playwright: () => removeDir(join(H, 'Library', 'Caches', 'ms-playwright-go')),
+  playwright: async () => removeDir(join(H, 'Library', 'Caches', 'ms-playwright-go')),
 
-  'node-gyp': () => removeDir(join(H, 'Library', 'Caches', 'node-gyp')),
+  'node-gyp': async () => removeDir(join(H, 'Library', 'Caches', 'node-gyp')),
 
   pip: async () => {
     // try pip3 first, fall back to pip
@@ -39,15 +39,15 @@ export const cleaners = {
     }
   },
 
-  homebrew: () => execAsync('brew cleanup'),
+  homebrew: async () => execAsync('brew cleanup'),
 
-  docker: () => execAsync('docker system prune -af --volumes'),
+  docker: async () => execAsync('docker system prune -af --volumes'),
 
-  simulators: () => execAsync('xcrun simctl delete unavailable'),
+  simulators: async () => execAsync('xcrun simctl delete unavailable'),
 
-  chrome: () => removeDir(join(H, 'Library', 'Caches', 'Google', 'Chrome')),
+  chrome: async () => removeDir(join(H, 'Library', 'Caches', 'Google', 'Chrome')),
 
-  brave: () => removeDir(join(H, 'Library', 'Caches', 'BraveSoftware')),
+  brave: async () => removeDir(join(H, 'Library', 'Caches', 'BraveSoftware')),
 
-  rambox: () => removeDir(join(H, 'Library', 'Application Support', 'rambox', 'Partitions')),
+  rambox: async () => removeDir(join(H, 'Library', 'Application Support', 'rambox', 'Partitions')),
 }
