@@ -17,6 +17,7 @@ export const categories = [
     safetyLevel: 'safe',
     description: 'Regenerated automatically on next install',
     paths: [join(H, 'Library', 'Caches', 'Yarn')],
+    requires: 'yarn',
   },
   {
     id: 'pnpm',
@@ -24,6 +25,7 @@ export const categories = [
     safetyLevel: 'safe',
     description: 'Unreferenced packages only — active projects unaffected',
     paths: [join(H, 'Library', 'Caches', 'pnpm')],
+    requires: 'pnpm',
   },
   {
     id: 'cocoapods',
@@ -31,6 +33,7 @@ export const categories = [
     safetyLevel: 'safe',
     description: 'Re-downloaded on next pod install',
     paths: [join(H, 'Library', 'Caches', 'CocoaPods')],
+    requires: 'pod',
   },
   {
     id: 'typescript',
@@ -45,6 +48,7 @@ export const categories = [
     safetyLevel: 'safe',
     description: 'Re-downloaded on next cypress run',
     paths: [join(H, 'Library', 'Caches', 'Cypress')],
+    requires: 'npx',
   },
   {
     id: 'playwright',
@@ -66,6 +70,7 @@ export const categories = [
     safetyLevel: 'safe',
     description: 'Re-downloaded on next pip install',
     paths: [join(H, 'Library', 'Caches', 'pip')],
+    requires: 'pip3',
   },
   {
     id: 'homebrew',
@@ -73,6 +78,7 @@ export const categories = [
     safetyLevel: 'safe',
     description: 'Old formula versions no longer needed',
     paths: [join(H, 'Library', 'Caches', 'Homebrew')],
+    requires: 'brew',
   },
   {
     id: 'docker',
@@ -80,6 +86,7 @@ export const categories = [
     safetyLevel: 'situational',
     description: 'Removes ALL unused images and volumes — re-pull needed',
     paths: [join(H, 'Library', 'Containers', 'com.docker.docker')],
+    requires: 'docker',
   },
   {
     id: 'simulators',
@@ -87,13 +94,14 @@ export const categories = [
     safetyLevel: 'situational',
     description: 'Removes unavailable simulator runtimes — only if not doing iOS dev',
     paths: [join(H, 'Library', 'Developer', 'CoreSimulator', 'Devices')],
+    requires: 'xcrun',
   },
   {
     id: 'chrome',
     label: 'Chrome cache',
     safetyLevel: 'situational',
     description: 'Clears Chrome browser cache — history and cookies are kept',
-    paths: [join(H, 'Library', 'Caches', 'Google', 'Chrome')],
+    paths: [join(H, 'Library', 'Caches', 'Google', 'Chrome', 'Default', 'Cache')],
   },
   {
     id: 'brave',

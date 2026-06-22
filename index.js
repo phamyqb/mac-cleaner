@@ -1,10 +1,14 @@
 #!/usr/bin/env node
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import chalk from 'chalk'
 import ora from 'ora'
 import { checkbox, confirm, Separator } from '@inquirer/prompts'
 import { categories } from './src/categories.js'
-import { scanAll, formatBytes } from './src/scanner.js'
+import { scanAll, formatBytes, commandExists } from './src/scanner.js'
 import { cleaners } from './src/cleaners.js'
+
+const execAsync = promisify(exec)
 
 const VERSION = '1.0.0'
 
@@ -21,13 +25,22 @@ try {
   process.exit(1)
 }
 
-// 2. Build choices for checkbox
+// 2. Filter out categories whose required command isn't installed
+const available = await Promise.all(
+  categories.map(async (cat) => ({
+    cat,
+    ok: cat.requires ? await commandExists(cat.requires) : true,
+  }))
+)
+const visibleCategories = available.filter(({ ok }) => ok).map(({ cat }) => cat)
+
+// 3. Build choices for checkbox
 function makeLabel(cat, badge, badgeColor) {
   const size = sizes[cat.id] > 0 ? formatBytes(sizes[cat.id]) : chalk.dim('not found')
   return `${badgeColor(badge.padEnd(15))} ${cat.label.padEnd(26)} ${chalk.dim(size)}`
 }
 
-const safeItems = categories
+const safeItems = visibleCategories
   .filter(c => c.safetyLevel === 'safe')
   .map(c => ({
     name: makeLabel(c, '[safe]', chalk.green),
@@ -35,7 +48,7 @@ const safeItems = categories
     checked: sizes[c.id] > 0,
   }))
 
-const situationalItems = categories
+const situationalItems = visibleCategories
   .filter(c => c.safetyLevel === 'situational')
   .map(c => ({
     name: makeLabel(c, '[situational]', chalk.yellow),
@@ -49,7 +62,7 @@ const choices = [
   ...situationalItems,
 ]
 
-// 3. Select
+// 4. Select
 let selected
 try {
   selected = await checkbox({
@@ -68,15 +81,25 @@ if (selected.length === 0) {
   process.exit(0)
 }
 
-// 4. Clean
+// 5. Clean
 console.log('')
 const results = []
 
 for (const id of selected) {
-  const cat = categories.find(c => c.id === id)
+  const cat = visibleCategories.find(c => c.id === id)
   const bytesBefore = sizes[id]
 
   if (cat.safetyLevel === 'situational') {
+    if (cat.id === 'docker') {
+      try {
+        await execAsync('docker info')
+      } catch {
+        console.log(chalk.yellow('\n⚠  Docker is not running — start it first.'))
+        results.push({ label: cat.label, status: 'skipped', freed: 0 })
+        continue
+      }
+    }
+
     console.log(chalk.yellow(`\n⚠  ${cat.description}`))
     let confirmed
     try {
@@ -97,6 +120,7 @@ for (const id of selected) {
   try {
     await cleaners[id]()
     s.succeed(chalk.green(`${cat.label} cleared`))
+    // freed is the pre-clean scan size — an approximation for tool-based cleaners (yarn, brew, etc.)
     results.push({ label: cat.label, status: 'cleared', freed: bytesBefore })
   } catch (e) {
     s.fail(chalk.red(`${cat.label} failed: ${e.message.split('\n')[0]}`))
@@ -104,7 +128,7 @@ for (const id of selected) {
   }
 }
 
-// 5. Summary
+// 6. Summary
 console.log('\n' + chalk.dim('─'.repeat(58)))
 let totalFreed = 0
 for (const r of results) {

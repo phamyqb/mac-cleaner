@@ -45,7 +45,7 @@ export const cleaners = {
 
   simulators: async () => execAsync('xcrun simctl delete unavailable'),
 
-  chrome: async () => removeDir(join(H, 'Library', 'Caches', 'Google', 'Chrome')),
+  chrome: async () => removeDir(join(H, 'Library', 'Caches', 'Google', 'Chrome', 'Default', 'Cache')),
 
   brave: async () => removeDir(join(H, 'Library', 'Caches', 'BraveSoftware')),
 

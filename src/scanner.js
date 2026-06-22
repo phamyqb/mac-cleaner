@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs'
 
 const execAsync = promisify(exec)
 
-export async function scanPath(p) {
+async function scanPath(p) {
   if (!existsSync(p)) return 0
   try {
     const { stdout } = await execAsync(`du -sk "${p}"`)
@@ -13,6 +13,15 @@ export async function scanPath(p) {
     return isNaN(kb) ? 0 : kb * 1024
   } catch {
     return 0
+  }
+}
+
+export async function commandExists(cmd) {
+  try {
+    await execAsync(`command -v ${cmd}`)
+    return true
+  } catch {
+    return false
   }
 }
 

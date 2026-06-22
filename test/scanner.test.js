@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { strict as assert } from 'node:assert'
 import { formatBytes } from '../src/scanner.js'
 import { categories } from '../src/categories.js'
+import { cleaners } from '../src/cleaners.js'
 
 test('formatBytes: 0 bytes', () => {
   assert.equal(formatBytes(0), '0 B')
@@ -42,8 +43,6 @@ test('categories: ids are unique', () => {
   const unique = new Set(ids)
   assert.equal(unique.size, ids.length, 'duplicate category ids found')
 })
-
-import { cleaners } from '../src/cleaners.js'
 
 test('cleaners: every category has a cleaner', () => {
   for (const cat of categories) {
