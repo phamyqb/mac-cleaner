@@ -7,7 +7,7 @@
     "access": "public"
   },
   "bin": {
-    "mac-cleaner": "./index.js"
+    "mac-cleaner": "index.js"
   },
   "scripts": {
     "start": "node index.js",
