@@ -1,8 +1,11 @@
 {
-  "name": "mac-cleaner",
+  "name": "@phamyqb/mac-cleaner",
   "version": "1.0.0",
   "description": "Interactive macOS storage cleanup CLI",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "mac-cleaner": "./index.js"
   },

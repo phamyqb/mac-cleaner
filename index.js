@@ -12,6 +12,31 @@ const execAsync = promisify(exec)
 
 const VERSION = '1.0.0'
 
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log(`
+${chalk.bold(`mac-cleaner v${VERSION}`)} — Interactive macOS storage cleanup
+
+${chalk.bold('Usage:')} mac-cleaner [options]
+
+${chalk.bold('Options:')}
+  -h, --help    Show this help message
+
+${chalk.bold('Controls:')}
+  Space         Toggle item on/off
+  ↑ / ↓         Navigate list
+  Enter         Confirm selection
+  Ctrl+C        Cancel
+
+${chalk.bold('Safety levels:')}
+  ${chalk.green('[safe]')}         Runs immediately — caches are regenerated automatically
+  ${chalk.yellow('[situational]')}  Asks for confirmation — may require re-login or re-download
+
+${chalk.bold('Install:')}
+  npx @phamyqb/mac-cleaner
+`)
+  process.exit(0)
+}
+
 console.log(chalk.bold(`\nmac-cleaner v${VERSION}\n`))
 
 // 1. Scan
