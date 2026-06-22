@@ -42,3 +42,21 @@ test('categories: ids are unique', () => {
   const unique = new Set(ids)
   assert.equal(unique.size, ids.length, 'duplicate category ids found')
 })
+
+import { cleaners } from '../src/cleaners.js'
+
+test('cleaners: every category has a cleaner', () => {
+  for (const cat of categories) {
+    assert.ok(
+      typeof cleaners[cat.id] === 'function',
+      `missing cleaner for category: ${cat.id}`
+    )
+  }
+})
+
+test('cleaners: no extra cleaners without a category', () => {
+  const ids = new Set(categories.map(c => c.id))
+  for (const key of Object.keys(cleaners)) {
+    assert.ok(ids.has(key), `cleaner "${key}" has no matching category`)
+  }
+})
