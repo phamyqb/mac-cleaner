@@ -106,11 +106,20 @@ html, body, #root {
 }
 .clean-btn:hover { opacity: 0.85; }
 .clean-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.cache-hint {
-  text-align: center;
+.optimize-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  margin-top: 10px;
+}
+.optimize-hint strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+.optimize-hint-sub {
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
-  margin-top: 14px;
+  color: rgba(255,255,255,0.3);
 }
 .toast {
   margin-top: 10px;

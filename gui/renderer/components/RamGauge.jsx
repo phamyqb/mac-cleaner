@@ -12,7 +12,7 @@ export default function RamGauge() {
   const [processes, setProcesses] = useState([])
   const [processesLoaded, setProcessesLoaded] = useState(false)
   const [cleaning, setCleaning] = useState(false)
-  const [toast, setToast] = useState(null)
+  const [result, setResult] = useState(null)  // { ramFreed, cacheFreed } after last optimize
   const statsRef = useRef(null)
 
   useEffect(() => {
@@ -26,22 +26,17 @@ export default function RamGauge() {
     const cacheBefore = statsRef.current?.reclaimable ?? 0
 
     setCleaning(true)
-    setToast(null)
+    setResult(null)
     try {
       await window.api.cleanRam()
-      // Wait one full poll cycle (2s) for stats to reflect the freed memory
+      // Wait one poll cycle (2s) for stats to reflect the freed memory
       setTimeout(() => {
         const usedAfter = statsRef.current?.used ?? usedBefore
-        const freedRAM  = Math.max(0, usedBefore - usedAfter)
-        const parts = []
-        if (freedRAM   > 20  * 1024 * 1024) parts.push(`${fmtGB(freedRAM)} RAM freed`)
-        if (cacheBefore > 50 * 1024 * 1024) parts.push(`${fmtGB(cacheBefore)} cache flushed`)
-        setToast(parts.length ? parts.join(' · ') : 'Memory optimized')
-        setTimeout(() => setToast(null), 6000)
+        const ramFreed  = Math.max(0, usedBefore - usedAfter)
+        setResult({ ramFreed, cacheFreed: cacheBefore })
       }, 2500)
     } catch {
-      setToast('Cancelled')
-      setTimeout(() => setToast(null), 3000)
+      setResult({ error: true })
     } finally {
       setCleaning(false)
     }
@@ -88,13 +83,26 @@ export default function RamGauge() {
         ))}
       </div>
 
-      {!cleaning && stats.compressed > 20 * 1024 * 1024 && (
-        <div className="cache-hint">~{fmtGB(stats.compressed)} RAM may be freed</div>
-      )}
-      <button className="clean-btn" style={{ marginTop: 6 }} onClick={handleClean} disabled={cleaning}>
+      <div className="optimize-hint">
+        {cleaning ? null
+          : result?.error ? <span style={{ color: '#ff453a' }}>Cancelled</span>
+          : result ? (
+            <>
+              <span style={{ color: '#30d158' }}>✓</span>
+              {result.ramFreed > 20 * 1024 * 1024
+                ? <><strong>{fmtGB(result.ramFreed)}</strong> RAM freed</>
+                : 'RAM freed: minimal'}
+              {result.cacheFreed > 50 * 1024 * 1024 && (
+                <span className="optimize-hint-sub">+ {fmtGB(result.cacheFreed)} cache flushed</span>
+              )}
+            </>
+          ) : stats.compressed > 20 * 1024 * 1024 ? (
+            <>~<strong>{fmtGB(stats.compressed)}</strong> estimated free</>
+          ) : null}
+      </div>
+      <button className="clean-btn" onClick={handleClean} disabled={cleaning}>
         {cleaning ? 'Optimizing...' : 'Optimize Memory'}
       </button>
-      {toast && <div className="toast">{toast}</div>}
     </div>
   )
 }
