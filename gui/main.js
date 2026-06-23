@@ -100,8 +100,7 @@ function startPolling() {
     try {
       const stats = await getRamStats()
       const pct = Math.round((stats.used / stats.total) * 100)
-      const usedGB = (stats.used / (1024 ** 3)).toFixed(1)
-      tray.setTitle(`RAM: ${pct}%`)
+      tray.setTitle(`Mem: ${pct}%`)
       win?.webContents.send('ram:stats', stats)
     } catch {}
   }, 2000)
@@ -188,6 +187,13 @@ function registerIpc() {
 
   ipcMain.handle('disk:scan', () => scanAll(categories))
 
+  ipcMain.handle('disk:check', async () => {
+    const checks = {}
+    try { await execAsync('docker info', { timeout: 3000 }); checks.docker = true }
+    catch { checks.docker = false }
+    return checks
+  })
+
   ipcMain.handle('disk:categories', () =>
     categories.map(({ id, label, description, safetyLevel }) => ({ id, label, description, safetyLevel }))
   )
@@ -219,6 +225,8 @@ function registerIpc() {
     }
     return results
   })
+
+  ipcMain.handle('app:open', (_e, { name }) => execAsync(`open -a "${name}"`))
 
   ipcMain.handle('settings:get', () => ({ ...settings }))
 

@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld('api', {
   cleanDisk:         (ids) => ipcRenderer.invoke('disk:clean', { ids }),
   getDiskCategories: ()    => ipcRenderer.invoke('disk:categories'),
   getDiskInfo:       ()    => ipcRenderer.invoke('disk:info'),
+  checkDisk:         ()    => ipcRenderer.invoke('disk:check'),
+  openApp:           (name) => ipcRenderer.invoke('app:open', { name }),
   getSettings:       ()    => ipcRenderer.invoke('settings:get'),
   setSettings:       (s)   => ipcRenderer.invoke('settings:set', s),
 })

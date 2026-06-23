@@ -41,7 +41,11 @@ export const cleaners = {
 
   homebrew: async () => execAsync('brew cleanup'),
 
-  docker: async () => execAsync('docker system prune -af --volumes'),
+  docker: async () => {
+    try { await execAsync('docker info', { timeout: 3000 }) }
+    catch { throw new Error('Docker is not running — start Docker Desktop first') }
+    await execAsync('docker system prune -af --volumes')
+  },
 
   simulators: async () => execAsync('xcrun simctl delete unavailable'),
 

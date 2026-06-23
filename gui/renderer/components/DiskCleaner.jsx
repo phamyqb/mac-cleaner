@@ -17,6 +17,7 @@ export default function DiskCleaner() {
   const [cats, setCats] = useState([])
   const [sizes, setSizes] = useState({})
   const [diskInfo, setDiskInfo] = useState(null)
+  const [daemons, setDaemons] = useState({})
   const [selected, setSelected] = useState(new Set())
   const [cleaning, setCleaning] = useState(false)
   const [results, setResults] = useState([])
@@ -26,10 +27,12 @@ export default function DiskCleaner() {
       window.api.getDiskCategories(),
       window.api.scanDisk(),
       window.api.getDiskInfo(),
-    ]).then(([categories, sizeMap, info]) => {
+      window.api.checkDisk(),
+    ]).then(([categories, sizeMap, info, checks]) => {
       setCats(categories)
       setSizes(sizeMap)
       setDiskInfo(info)
+      setDaemons(checks)
       const preChecked = new Set(
         categories
           .filter(c => c.safetyLevel === 'safe' && sizeMap[c.id] > 0)
@@ -61,9 +64,14 @@ export default function DiskCleaner() {
     }
   }
 
-  // Only show items that have actual cached data
+  function isDaemonOffline(id) {
+    if (id === 'docker') return daemons.docker === false
+    return false
+  }
+
+  // Only show items that have actual cached data (or daemon is offline — show with warning)
   const safe = cats.filter(c => c.safetyLevel === 'safe' && sizes[c.id] > 0)
-  const situational = cats.filter(c => c.safetyLevel === 'situational' && sizes[c.id] > 0)
+  const situational = cats.filter(c => c.safetyLevel === 'situational' && (sizes[c.id] > 0 || isDaemonOffline(c.id)))
 
   function renderList(items) {
     if (items.length === 0) return null
@@ -72,19 +80,36 @@ export default function DiskCleaner() {
         {items.map(c => {
           const res = results.find(r => r.id === c.id)
           const size = fmtSize(sizes[c.id])
+          const offline = isDaemonOffline(c.id)
           return (
-            <label key={c.id} className="disk-item">
+            <label key={c.id} className={`disk-item ${offline ? 'disk-item-offline' : ''}`}>
               <input
                 type="checkbox"
                 checked={selected.has(c.id)}
                 onChange={() => toggle(c.id)}
+                disabled={offline}
               />
               <span className="disk-item-label">
                 {c.label}
-                {c.description && <span className="disk-item-desc">{c.description}</span>}
+                {offline
+                  ? <span className="disk-item-desc disk-item-warn">
+                      ⚠ Docker not running —{' '}
+                      <span
+                        className="disk-item-link"
+                        onClick={e => { e.preventDefault(); window.api.openApp?.('Docker') }}
+                      >
+                        open Docker Desktop
+                      </span>
+                    </span>
+                  : c.description && <span className="disk-item-desc">{c.description}</span>
+                }
               </span>
               <span className="disk-item-size">
-                {res ? (res.status === 'cleared' ? '✓ cleared' : '✗ failed') : size}
+                {res
+                  ? res.status === 'cleared'
+                    ? '✓ cleared'
+                    : <span style={{ color: '#ff453a' }} title={res.error}>✗ failed</span>
+                  : size}
               </span>
             </label>
           )

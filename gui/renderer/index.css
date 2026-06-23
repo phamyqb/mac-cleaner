@@ -237,6 +237,11 @@ html, body, #root {
   font-weight: 400;
 }
 .disk-item-size { font-size: 12px; color: rgba(255,255,255,0.4); flex-shrink: 0; }
+.disk-item-offline { opacity: 0.75; }
+.disk-item-offline input[type="checkbox"] { cursor: not-allowed; }
+.disk-item-warn { color: rgba(255,193,7,0.8) !important; }
+.disk-item-link { text-decoration: underline; cursor: pointer; color: #0a84ff; }
+.disk-item-link:hover { color: #40a0ff; }
 
 /* Settings tab */
 .settings { display: flex; flex-direction: column; gap: 20px; }
