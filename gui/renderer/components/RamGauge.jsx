@@ -12,6 +12,7 @@ export default function RamGauge() {
   const [processes, setProcesses] = useState([])
   const [cleaning, setCleaning] = useState(false)
   const [toast, setToast] = useState(null)
+  const [justOptimized, setJustOptimized] = useState(false)
 
   useEffect(() => {
     window.api.onRamStats(setStats)
@@ -28,6 +29,8 @@ export default function RamGauge() {
     try {
       await window.api.cleanRam()
       setToast('Memory optimized')
+      setJustOptimized(true)
+      setTimeout(() => setJustOptimized(false), 8000)
     } catch {
       setToast('Cancelled')
     } finally {
@@ -77,11 +80,11 @@ export default function RamGauge() {
         </div>
       )}
 
-      <button className="clean-btn" onClick={handleClean} disabled={cleaning}>
+      <button className="clean-btn" style={{ marginTop: 14 }} onClick={handleClean} disabled={cleaning}>
         {cleaning ? 'Optimizing...' : (
           <>
             Optimize Memory
-            {stats.reclaimable > 50 * 1024 * 1024 && (
+            {!justOptimized && stats.reclaimable > 50 * 1024 * 1024 && (
               <span className="clean-btn-hint">
                 ~{fmtGB(stats.reclaimable)} recoverable
               </span>
