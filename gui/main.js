@@ -101,7 +101,7 @@ function startPolling() {
       const stats = await getRamStats()
       const pct = Math.round((stats.used / stats.total) * 100)
       const usedGB = (stats.used / (1024 ** 3)).toFixed(1)
-      tray.setTitle(` ${usedGB}G ${pct}%`)
+      tray.setTitle(`RAM: ${pct}%`)
       win?.webContents.send('ram:stats', stats)
     } catch {}
   }, 2000)

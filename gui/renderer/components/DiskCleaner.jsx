@@ -93,8 +93,6 @@ export default function DiskCleaner() {
   if (cats.length === 0) return <div className="loading">Scanning...</div>
 
   const usedPct = diskInfo ? Math.round((diskInfo.used / diskInfo.total) * 100) : 0
-  const diskColor = usedPct > 85 ? '#ff453a' : usedPct > 70 ? '#ffd60a' : '#0a84ff'
-
   return (
     <div>
       {diskInfo && (
@@ -104,7 +102,7 @@ export default function DiskCleaner() {
             <span className="ram-meta">of {fmtGB(diskInfo.total)} · {usedPct}% used</span>
           </div>
           <div className="gauge-bar">
-            <div className="gauge-fill" style={{ width: `${usedPct}%`, background: diskColor, transition: 'width 0.5s ease, background 0.5s ease' }} />
+            <div className="gauge-fill" style={{ width: `${usedPct}%` }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>
             <span>Used: {fmtGB(diskInfo.used)}</span>
