@@ -70,6 +70,11 @@ html, body, #root {
 .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
 /* RAM tab */
+.ram-hero { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.ram-used { font-size: 28px; font-weight: 700; }
+.ram-meta { font-size: 12px; color: rgba(255,255,255,0.45); }
+.breakdown-separator { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+
 .gauge-bar {
   height: 8px;
   background: rgba(255,255,255,0.1);
@@ -83,11 +88,10 @@ html, body, #root {
   border-radius: 4px;
   transition: width 0.5s ease;
 }
-.gauge-label { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-.pressure { font-size: 12px; font-weight: 500; margin-bottom: 16px; text-transform: capitalize; }
-.breakdown { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
-.breakdown div { display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.6); }
-.breakdown div span { color: rgba(255,255,255,0.9); font-weight: 500; }
+.pressure { font-size: 12px; font-weight: 500; margin: 6px 0 16px; text-transform: capitalize; }
+.breakdown { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+.breakdown div { display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.55); }
+.breakdown div span:last-child { color: rgba(255,255,255,0.9); font-weight: 500; }
 .clean-btn {
   width: 100%;
   padding: 10px;

@@ -2,12 +2,12 @@ import { test } from 'node:test'
 import { strict as assert } from 'node:assert'
 import { parsePs } from '../../src/ram/processes.js'
 
-const PS_FIXTURE = `  PID COMM                   RSS
-12345 Google Chrome Helper  831976
- 5678 Slack                 649288
- 9012 Xcode                 593408
-    0 kernel_task          1024000
-  100 tiny                     512
+// Format: pid rss command (no header, -c flag gives clean names)
+const PS_FIXTURE = `12345 831976 Google Chrome Helper
+ 5678 649288 Slack
+ 9012 593408 Xcode
+    0 1024000 kernel_task
+  100 512 tiny
 `
 
 test('parsePs: filters out kernel_task (pid 0)', () => {
@@ -37,14 +37,14 @@ test('parsePs: captures multi-word process names', () => {
 
 test('parsePs: returns at most 8 results', () => {
   const many = Array.from({ length: 20 }, (_, i) =>
-    `${i + 1} proc${i + 1} ${(i + 1) * 1000}`
+    `${i + 1} ${(i + 1) * 1000} proc${i + 1}`
   ).join('\n')
-  const results = parsePs('  PID COMM RSS\n' + many)
+  const results = parsePs(many)
   assert.ok(results.length <= 8)
 })
 
 test('parsePs: filters entries with zero rss', () => {
-  const fixture = '  PID COMM   RSS\n  123 foo      0\n'
+  const fixture = '123 0 foo\n'
   const results = parsePs(fixture)
   assert.equal(results.length, 0)
 })

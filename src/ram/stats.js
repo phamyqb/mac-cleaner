@@ -39,5 +39,5 @@ export async function getRamStats() {
   // Match Activity Monitor: used = wired + active + compressed (excludes reclaimable inactive)
   const used = wired + active + compressed
   const pressureLevel = parsePressure(pressureOut)
-  return { used, free, wired, compressed, total, pressureLevel }
+  return { used, free, wired, active, compressed, total, pressureLevel }
 }

@@ -20,7 +20,8 @@ let tray = null
 let win = null
 let settings = { threshold: 75, autoclean: true, notifications: true }
 let lastPressure = 'normal'
-let lastAutoClean = 0  // timestamp — prevents repeated purge every 5s
+let lastAutoClean = 0
+let purgeSetupAttempted = false
 
 app.dock?.hide()
 
@@ -68,7 +69,6 @@ async function createWindow() {
   win = new BrowserWindow(opts)
   await win.loadFile(join(__dirname, '../dist/renderer/index.html'))
   win.setAlwaysOnTop(true, 'floating')
-  win.setPosition(workArea.x + workArea.width - 380, workArea.y + 4)
 }
 
 function toggleWindow() {
@@ -76,6 +76,13 @@ function toggleWindow() {
   if (win.isVisible()) {
     win.hide()
   } else {
+    // Position window below the tray icon
+    const { x, y, width, height } = tray.getBounds()
+    const winW = win.getBounds().width
+    const { workArea } = screen.getPrimaryDisplay()
+    const newX = Math.round(x + width / 2 - winW / 2)
+    const clampedX = Math.min(Math.max(newX, workArea.x), workArea.x + workArea.width - winW)
+    win.setPosition(clampedX, y + height + 4)
     win.setAlwaysOnTop(true, 'floating')
     win.show()
     win.moveTop()
@@ -88,7 +95,8 @@ function startPolling() {
     try {
       const stats = await getRamStats()
       const pct = Math.round((stats.used / stats.total) * 100)
-      tray.setTitle(` ${pct}%`)
+      const usedGB = (stats.used / (1024 ** 3)).toFixed(1)
+      tray.setTitle(` ${usedGB}G ${pct}%`)
       win?.webContents.send('ram:stats', stats)
     } catch {}
   }, 2000)
@@ -145,13 +153,23 @@ function startPolling() {
 }
 
 async function runPurge() {
-  try {
-    // Use passwordless purge if sudoers entry exists (set up via Settings tab)
-    await execAsync('sudo -n purge')
-  } catch {
-    // Fall back to native macOS password dialog
-    await execAsync(`osascript -e 'do shell script "purge" with administrator privileges'`)
+  // Try passwordless first (works if sudoers entry already exists)
+  try { await execAsync('sudo -n purge'); return } catch {}
+
+  // Auto-setup passwordless on first need — one password prompt, then never again
+  if (!purgeSetupAttempted) {
+    purgeSetupAttempted = true
+    try {
+      const user = process.env.USER
+      const line = `${user} ALL=(ALL) NOPASSWD: /usr/sbin/purge`
+      await execAsync(`osascript -e 'do shell script "echo \\"${line}\\" > /etc/sudoers.d/mac-optimizer" with administrator privileges'`)
+      await execAsync('sudo -n purge')
+      return
+    } catch {}
   }
+
+  // Fallback: ask for password each time
+  await execAsync(`osascript -e 'do shell script "purge" with administrator privileges'`)
 }
 
 function registerIpc() {
@@ -169,6 +187,17 @@ function registerIpc() {
     categories.map(({ id, label, description, safetyLevel }) => ({ id, label, description, safetyLevel }))
   )
 
+  ipcMain.handle('disk:info', async () => {
+    const { stdout } = await execAsync('df -k /')
+    const parts = stdout.trim().split('\n')[1].trim().split(/\s+/)
+    // df -k /: Filesystem 1K-blocks Used Available Capacity ...
+    return {
+      total: parseInt(parts[1], 10) * 1024,
+      used:  parseInt(parts[2], 10) * 1024,
+      free:  parseInt(parts[3], 10) * 1024,
+    }
+  })
+
   ipcMain.handle('disk:clean', async (_e, { ids }) => {
     const results = []
     for (const id of ids) {
@@ -180,21 +209,6 @@ function registerIpc() {
       }
     }
     return results
-  })
-
-  ipcMain.handle('purge:setup', async () => {
-    const user = process.env.USER
-    const sudoersLine = `${user} ALL=(ALL) NOPASSWD: /usr/sbin/purge`
-    await execAsync(`osascript -e 'do shell script "echo \\"${sudoersLine}\\" > /etc/sudoers.d/mac-optimizer" with administrator privileges'`)
-  })
-
-  ipcMain.handle('purge:isPasswordless', async () => {
-    try {
-      await execAsync('sudo -n purge')
-      return true
-    } catch {
-      return false
-    }
   })
 
   ipcMain.handle('settings:get', () => ({ ...settings }))

@@ -5,13 +5,14 @@ const execAsync = promisify(exec)
 
 export function parsePs(output) {
   return output.trim().split('\n')
-    .filter(line => !/^\s*PID/.test(line))
+    .filter(Boolean)
     .map(line => {
       const parts = line.trim().split(/\s+/)
       if (parts.length < 3) return null
       const pid = parseInt(parts[0], 10)
-      const name = parts.slice(1, -1).join(' ')
-      const rss = parseInt(parts[parts.length - 1], 10)
+      const rss = parseInt(parts[1], 10)
+      // parts[2..] is command name (clean, no path, no args due to -c flag)
+      const name = parts.slice(2).join(' ')
       if (isNaN(pid) || pid <= 0 || isNaN(rss) || rss === 0) return null
       return { pid, name, memMB: Math.round(rss / 1024) }
     })
@@ -20,6 +21,7 @@ export function parsePs(output) {
 }
 
 export async function getTopProcesses() {
-  const { stdout } = await execAsync('ps -axo pid,comm,rss | sort -k3 -rn | head -9')
+  // -c: show clean command name (no path, no args); = suffix: no header
+  const { stdout } = await execAsync('ps -ax -c -o pid=,rss=,command= | sort -k2 -rn | head -9')
   return parsePs(stdout)
 }

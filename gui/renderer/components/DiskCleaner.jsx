@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react'
 
-function fmt(bytes) {
+function fmtGB(bytes) {
+  if (!bytes) return null
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`
+  return `${(bytes / (1024 ** 3)).toFixed(1)} GB`
+}
+
+function fmtSize(bytes) {
   if (!bytes || bytes === 0) return null
   const units = ['B', 'KB', 'MB', 'GB']
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
@@ -10,6 +16,7 @@ function fmt(bytes) {
 export default function DiskCleaner() {
   const [cats, setCats] = useState([])
   const [sizes, setSizes] = useState({})
+  const [diskInfo, setDiskInfo] = useState(null)
   const [selected, setSelected] = useState(new Set())
   const [cleaning, setCleaning] = useState(false)
   const [results, setResults] = useState([])
@@ -18,9 +25,11 @@ export default function DiskCleaner() {
     Promise.all([
       window.api.getDiskCategories(),
       window.api.scanDisk(),
-    ]).then(([categories, sizeMap]) => {
+      window.api.getDiskInfo(),
+    ]).then(([categories, sizeMap, info]) => {
       setCats(categories)
       setSizes(sizeMap)
+      setDiskInfo(info)
       const preChecked = new Set(
         categories
           .filter(c => c.safetyLevel === 'safe' && sizeMap[c.id] > 0)
@@ -44,22 +53,25 @@ export default function DiskCleaner() {
     try {
       const res = await window.api.cleanDisk([...selected])
       setResults(res)
-      const newSizes = await window.api.scanDisk()
+      const [newSizes, newInfo] = await Promise.all([window.api.scanDisk(), window.api.getDiskInfo()])
       setSizes(newSizes)
+      setDiskInfo(newInfo)
     } finally {
       setCleaning(false)
     }
   }
 
-  const safe = cats.filter(c => c.safetyLevel === 'safe')
-  const situational = cats.filter(c => c.safetyLevel === 'situational')
+  // Only show items that have actual cached data
+  const safe = cats.filter(c => c.safetyLevel === 'safe' && sizes[c.id] > 0)
+  const situational = cats.filter(c => c.safetyLevel === 'situational' && sizes[c.id] > 0)
 
   function renderList(items) {
+    if (items.length === 0) return null
     return (
       <div className="disk-list">
         {items.map(c => {
           const res = results.find(r => r.id === c.id)
-          const size = fmt(sizes[c.id])
+          const size = fmtSize(sizes[c.id])
           return (
             <label key={c.id} className="disk-item">
               <input
@@ -69,7 +81,7 @@ export default function DiskCleaner() {
               />
               <span className="disk-item-label">{c.label}</span>
               <span className="disk-item-size">
-                {res ? (res.status === 'cleared' ? '✓' : '✗') : (size ?? 'not found')}
+                {res ? (res.status === 'cleared' ? '✓ cleared' : '✗ failed') : size}
               </span>
             </label>
           )
@@ -80,12 +92,42 @@ export default function DiskCleaner() {
 
   if (cats.length === 0) return <div className="loading">Scanning...</div>
 
+  const usedPct = diskInfo ? Math.round((diskInfo.used / diskInfo.total) * 100) : 0
+
   return (
     <div>
-      <div className="disk-section-label">Safe</div>
-      {renderList(safe)}
-      <div className="disk-section-label">Situational</div>
-      {renderList(situational)}
+      {diskInfo && (
+        <div style={{ marginBottom: 16 }}>
+          <div className="ram-hero" style={{ marginBottom: 6 }}>
+            <span className="ram-used" style={{ fontSize: 22 }}>{fmtGB(diskInfo.used)}</span>
+            <span className="ram-meta">of {fmtGB(diskInfo.total)} · {usedPct}% used</span>
+          </div>
+          <div className="gauge-bar">
+            <div className="gauge-fill" style={{ width: `${usedPct}%`, background: 'linear-gradient(90deg, #ff9f0a, #ff453a)' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>
+            <span>Used: {fmtGB(diskInfo.used)}</span>
+            <span>Free: {fmtGB(diskInfo.free)}</span>
+          </div>
+        </div>
+      )}
+
+      {safe.length > 0 && (
+        <>
+          <div className="disk-section-label">Safe to Clean</div>
+          {renderList(safe)}
+        </>
+      )}
+      {situational.length > 0 && (
+        <>
+          <div className="disk-section-label">Situational</div>
+          {renderList(situational)}
+        </>
+      )}
+      {safe.length === 0 && situational.length === 0 && (
+        <div className="empty" style={{ marginTop: 20 }}>Nothing to clean — disk caches are empty</div>
+      )}
+
       <button
         className="clean-btn"
         style={{ marginTop: 14 }}

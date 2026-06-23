@@ -11,16 +11,11 @@ export default function App() {
       <header className="header">
         <span className="title">Mac Optimizer</span>
         <nav className="tabs">
-          {[['ram','RAM'],['proc','Proc'],['disk','Disk']].map(([key, label]) => (
+          {[['ram','RAM'],['proc','Processes'],['disk','Disk'],['settings','Settings']].map(([key, label]) => (
             <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
               {label}
             </button>
           ))}
-          <button
-            className={tab === 'settings' ? 'active' : ''}
-            onClick={() => setTab('settings')}
-            style={{ fontSize: 16 }}
-          >⚙</button>
         </nav>
       </header>
       <div className="content">
