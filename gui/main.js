@@ -109,8 +109,12 @@ function startPolling() {
             new Notification({ title: 'mac-cleaner', body: 'Memory pressure is high' }).show()
           } else if (stats.pressureLevel === 'critical') {
             if (settings.autoclean) {
-              await runPurge()
-              new Notification({ title: 'mac-cleaner', body: 'Memory cleaned automatically' }).show()
+              try {
+                await runPurge()
+                new Notification({ title: 'mac-cleaner', body: 'Memory cleaned automatically' }).show()
+              } catch {
+                new Notification({ title: 'mac-cleaner', body: 'Auto-clean failed — open mac-cleaner to clean manually' }).show()
+              }
             } else {
               new Notification({
                 title: 'mac-cleaner',
@@ -137,8 +141,8 @@ function registerIpc() {
     await runPurge()
   })
 
-  ipcMain.handle('process:kill', async (_e, { pid }) => {
-    await execAsync(`kill -9 ${pid}`)
+  ipcMain.handle('process:kill', (_e, { pid }) => {
+    process.kill(Number(pid), 'SIGKILL')
   })
 
   ipcMain.handle('disk:scan', () => scanAll(categories))
@@ -163,6 +167,9 @@ function registerIpc() {
   ipcMain.handle('settings:get', () => ({ ...settings }))
 
   ipcMain.handle('settings:set', (_e, incoming) => {
-    settings = { ...settings, ...incoming }
+    const { threshold, autoclean, notifications } = incoming
+    if (typeof threshold === 'number') settings.threshold = Math.min(90, Math.max(60, threshold))
+    if (typeof autoclean === 'boolean') settings.autoclean = autoclean
+    if (typeof notifications === 'boolean') settings.notifications = notifications
   })
 }

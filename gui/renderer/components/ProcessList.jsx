@@ -5,6 +5,7 @@ export default function ProcessList() {
 
   useEffect(() => {
     window.api.onRamProcesses(setProcesses)
+    return () => window.api.offRamProcesses()
   }, [])
 
   async function handleKill(pid) {

@@ -17,6 +17,7 @@ export default function RamGauge() {
 
   useEffect(() => {
     window.api.onRamStats(setStats)
+    return () => window.api.offRamStats()
   }, [])
 
   async function handleClean() {

@@ -4,6 +4,8 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('api', {
   onRamStats:        (cb) => ipcRenderer.on('ram:stats',      (_e, d) => cb(d)),
   onRamProcesses:    (cb) => ipcRenderer.on('ram:processes',  (_e, d) => cb(d)),
+  offRamStats:       () => ipcRenderer.removeAllListeners('ram:stats'),
+  offRamProcesses:   () => ipcRenderer.removeAllListeners('ram:processes'),
   cleanRam:          ()    => ipcRenderer.invoke('ram:clean'),
   killProcess:       (pid) => ipcRenderer.invoke('process:kill', { pid }),
   scanDisk:          ()    => ipcRenderer.invoke('disk:scan'),
