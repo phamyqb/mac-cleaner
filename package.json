@@ -9,10 +9,17 @@
   "bin": {
     "mac-cleaner": "index.js"
   },
+  "files": [
+    "index.js",
+    "src/",
+    "gui/",
+    "dist/renderer/"
+  ],
   "scripts": {
     "start": "node index.js",
     "gui": "npm run build:renderer && node index.js --gui",
     "build:renderer": "vite build",
+    "prepack": "npm run build:renderer",
     "test": "node --test"
   },
   "dependencies": {
