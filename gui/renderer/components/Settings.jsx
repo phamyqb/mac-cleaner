@@ -90,7 +90,7 @@ export default function Settings() {
         First Optimize prompts once to enable passwordless mode
       </div>
       <div style={{ paddingTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.18)', textAlign: 'center' }}>
-        mac-cleaner v{version}
+        Mac Optimizer v{version}
       </div>
     </div>
   )
