@@ -238,14 +238,18 @@ function registerIpc() {
 
   ipcMain.handle('app:open', (_e, { name }) => execAsync(`open -a "${name}"`))
 
-  ipcMain.handle('login-item:get', () =>
-    app.getLoginItemSettings().openAtLogin
-  )
+  const isNpx = __dirname.includes('_npx') || process.execPath.includes('_npx')
+
+  ipcMain.handle('login-item:get', () => ({
+    openAtLogin: app.getLoginItemSettings().openAtLogin,
+    isNpx,
+  }))
 
   ipcMain.handle('login-item:set', (_e, { enable }) => {
+    if (isNpx) return
     app.setLoginItemSettings({
       openAtLogin: enable,
-      openAsHidden: true,   // no dock bounce, no terminal
+      openAsHidden: true,
       path: process.execPath,
       args: [join(__dirname, 'main.js')],
     })

@@ -3,14 +3,18 @@ import React, { useState, useEffect } from 'react'
 export default function Settings() {
   const [s, setS] = useState({ threshold: 75, autoclean: true, notifications: true, diskRescan: 60 })
   const [launchAtLogin, setLaunchAtLogin] = useState(false)
+  const [isNpx, setIsNpx] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     Promise.all([window.api.getSettings(), window.api.getLoginItem()])
-      .then(([v, login]) => { setS(v); setLaunchAtLogin(login); setLoaded(true) })
+      .then(([v, { openAtLogin, isNpx: npx }]) => {
+        setS(v); setLaunchAtLogin(openAtLogin); setIsNpx(npx); setLoaded(true)
+      })
   }, [])
 
   function toggleLogin(val) {
+    if (isNpx) return
     setLaunchAtLogin(val)
     window.api.setLoginItem(val)
   }
@@ -28,11 +32,17 @@ export default function Settings() {
       <div className="setting-row">
         <div>
           <div className="setting-label">Launch at login</div>
-          <div className="setting-value">Start in menu bar on login</div>
+          <div className="setting-value">
+            {isNpx
+              ? <span style={{ color: '#ffd60a' }}>Requires global install</span>
+              : 'Start in menu bar on login'}
+          </div>
         </div>
         <button
           className={`toggle ${launchAtLogin ? 'on' : ''}`}
           onClick={() => toggleLogin(!launchAtLogin)}
+          disabled={isNpx}
+          title={isNpx ? 'Run: npm install -g @phamyqb/mac-cleaner' : ''}
         />
       </div>
       <div className="setting-row">
