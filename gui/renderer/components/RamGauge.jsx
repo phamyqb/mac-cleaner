@@ -29,18 +29,18 @@ export default function RamGauge() {
     setResult(null)
     try {
       await window.api.cleanRam()
-      // Wait one poll cycle (2s) for stats to reflect the freed memory
+      // Stay in "cleaning" state until stats refresh so the estimate doesn't flash back
       setTimeout(() => {
         const usedAfter = statsRef.current?.used ?? usedBefore
         const ramFreed  = Math.max(0, usedBefore - usedAfter)
         setResult({ ramFreed, cacheFreed: cacheBefore })
+        setCleaning(false)
         setTimeout(() => setResult(null), 10000)
       }, 2500)
     } catch {
       setResult({ error: true })
-      setTimeout(() => setResult(null), 3000)
-    } finally {
       setCleaning(false)
+      setTimeout(() => setResult(null), 3000)
     }
   }
 
