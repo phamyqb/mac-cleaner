@@ -88,8 +88,8 @@ export default function RamGauge() {
         ))}
       </div>
 
-      {!cleaning && stats.reclaimable > 50 * 1024 * 1024 && (
-        <div className="cache-hint">~{fmtGB(stats.reclaimable)} file cache to flush</div>
+      {!cleaning && stats.compressed > 20 * 1024 * 1024 && (
+        <div className="cache-hint">~{fmtGB(stats.compressed)} RAM may be freed</div>
       )}
       <button className="clean-btn" style={{ marginTop: 6 }} onClick={handleClean} disabled={cleaning}>
         {cleaning ? 'Optimizing...' : 'Optimize Memory'}
