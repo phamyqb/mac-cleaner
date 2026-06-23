@@ -25,9 +25,9 @@ export default function RamGauge() {
     setToast(null)
     try {
       await window.api.cleanRam()
-      setToast('Memory cleaned')
+      setToast('Memory optimized')
     } catch {
-      setToast('Clean cancelled')
+      setToast('Cancelled')
     } finally {
       setCleaning(false)
       setTimeout(() => setToast(null), 3000)
@@ -53,7 +53,7 @@ export default function RamGauge() {
         <div>Free        <span>{fmt(stats.free)}</span></div>
       </div>
       <button className="clean-btn" onClick={handleClean} disabled={cleaning}>
-        {cleaning ? 'Cleaning...' : 'Clean Memory'}
+        {cleaning ? 'Optimizing...' : 'Optimize Memory'}
       </button>
       {toast && <div className="toast">{toast}</div>}
     </div>

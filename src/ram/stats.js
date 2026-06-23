@@ -12,6 +12,7 @@ export function parseVmStat(output) {
   return {
     pageSize,
     freePages: get('Pages free'),
+    activePages: get('Pages active'),
     wiredPages: get('Pages wired down'),
     compressedPages: get('Pages occupied by compressor'),
   }
@@ -29,12 +30,14 @@ export async function getRamStats() {
     execAsync('sysctl -n hw.memsize').then(r => r.stdout.trim()),
     execAsync('memory_pressure').then(r => r.stdout),
   ])
-  const { pageSize, freePages, wiredPages, compressedPages } = parseVmStat(vmStatOut)
+  const { pageSize, freePages, activePages, wiredPages, compressedPages } = parseVmStat(vmStatOut)
   const total = parseInt(sysctlOut, 10)
   const free = freePages * pageSize
   const wired = wiredPages * pageSize
   const compressed = compressedPages * pageSize
-  const used = total - free
+  const active = activePages * pageSize
+  // Match Activity Monitor: used = wired + active + compressed (excludes reclaimable inactive)
+  const used = wired + active + compressed
   const pressureLevel = parsePressure(pressureOut)
   return { used, free, wired, compressed, total, pressureLevel }
 }

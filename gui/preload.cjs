@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('api', {
   scanDisk:          ()    => ipcRenderer.invoke('disk:scan'),
   cleanDisk:         (ids) => ipcRenderer.invoke('disk:clean', { ids }),
   getDiskCategories: ()    => ipcRenderer.invoke('disk:categories'),
-  getSettings:       ()    => ipcRenderer.invoke('settings:get'),
-  setSettings:       (s)   => ipcRenderer.invoke('settings:set', s),
+  getSettings:          ()  => ipcRenderer.invoke('settings:get'),
+  setSettings:          (s) => ipcRenderer.invoke('settings:set', s),
+  setupPasswordless:    ()  => ipcRenderer.invoke('purge:setup'),
+  isPasswordless:       ()  => ipcRenderer.invoke('purge:isPasswordless'),
 })

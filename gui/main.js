@@ -67,6 +67,7 @@ async function createWindow() {
 
   win = new BrowserWindow(opts)
   await win.loadFile(join(__dirname, '../dist/renderer/index.html'))
+  win.setAlwaysOnTop(true, 'floating')
   win.setPosition(workArea.x + workArea.width - 380, workArea.y + 4)
 }
 
@@ -75,7 +76,9 @@ function toggleWindow() {
   if (win.isVisible()) {
     win.hide()
   } else {
+    win.setAlwaysOnTop(true, 'floating')
     win.show()
+    win.moveTop()
     win.focus()
   }
 }
@@ -142,7 +145,13 @@ function startPolling() {
 }
 
 async function runPurge() {
-  await execAsync(`osascript -e 'do shell script "purge" with administrator privileges'`)
+  try {
+    // Use passwordless purge if sudoers entry exists (set up via Settings tab)
+    await execAsync('sudo -n purge')
+  } catch {
+    // Fall back to native macOS password dialog
+    await execAsync(`osascript -e 'do shell script "purge" with administrator privileges'`)
+  }
 }
 
 function registerIpc() {
@@ -171,6 +180,21 @@ function registerIpc() {
       }
     }
     return results
+  })
+
+  ipcMain.handle('purge:setup', async () => {
+    const user = process.env.USER
+    const sudoersLine = `${user} ALL=(ALL) NOPASSWD: /usr/sbin/purge`
+    await execAsync(`osascript -e 'do shell script "echo \\"${sudoersLine}\\" > /etc/sudoers.d/mac-optimizer" with administrator privileges'`)
+  })
+
+  ipcMain.handle('purge:isPasswordless', async () => {
+    try {
+      await execAsync('sudo -n purge')
+      return true
+    } catch {
+      return false
+    }
   })
 
   ipcMain.handle('settings:get', () => ({ ...settings }))

@@ -9,20 +9,25 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <span className="title">mac-cleaner</span>
+        <span className="title">Mac Optimizer</span>
         <nav className="tabs">
-          {[['ram','RAM'],['proc','Proc'],['disk','Disk'],['settings','⚙']].map(([key, label]) => (
+          {[['ram','RAM'],['proc','Proc'],['disk','Disk']].map(([key, label]) => (
             <button key={key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
               {label}
             </button>
           ))}
+          <button
+            className={tab === 'settings' ? 'active' : ''}
+            onClick={() => setTab('settings')}
+            style={{ fontSize: 16 }}
+          >⚙</button>
         </nav>
       </header>
       <div className="content">
-        {tab === 'ram'      && <RamGauge />}
-        {tab === 'proc'     && <ProcessList />}
-        {tab === 'disk'     && <DiskCleaner />}
-        {tab === 'settings' && <Settings />}
+        <div style={{ display: tab === 'ram'      ? 'block' : 'none' }}><RamGauge /></div>
+        <div style={{ display: tab === 'proc'     ? 'block' : 'none' }}><ProcessList /></div>
+        <div style={{ display: tab === 'disk'     ? 'block' : 'none' }}><DiskCleaner /></div>
+        <div style={{ display: tab === 'settings' ? 'block' : 'none' }}><Settings /></div>
       </div>
     </div>
   )
