@@ -25,6 +25,11 @@ test('parseVmStat: extracts wired pages', () => {
   assert.equal(wiredPages, 8000)
 })
 
+test('parseVmStat: extracts inactive pages', () => {
+  const { inactivePages } = parseVmStat(VM_STAT_FIXTURE)
+  assert.equal(inactivePages, 10000)
+})
+
 test('parseVmStat: extracts compressed pages', () => {
   const { compressedPages } = parseVmStat(VM_STAT_FIXTURE)
   assert.equal(compressedPages, 2000)

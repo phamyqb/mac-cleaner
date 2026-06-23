@@ -78,7 +78,16 @@ export default function RamGauge() {
       )}
 
       <button className="clean-btn" onClick={handleClean} disabled={cleaning}>
-        {cleaning ? 'Optimizing...' : 'Optimize Memory'}
+        {cleaning ? 'Optimizing...' : (
+          <>
+            Optimize Memory
+            {stats.reclaimable > 50 * 1024 * 1024 && (
+              <span className="clean-btn-hint">
+                ~{fmtGB(stats.reclaimable)} recoverable
+              </span>
+            )}
+          </>
+        )}
       </button>
       {toast && <div className="toast">{toast}</div>}
     </div>

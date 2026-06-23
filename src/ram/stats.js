@@ -13,6 +13,7 @@ export function parseVmStat(output) {
     pageSize,
     freePages: get('Pages free'),
     activePages: get('Pages active'),
+    inactivePages: get('Pages inactive'),
     wiredPages: get('Pages wired down'),
     compressedPages: get('Pages occupied by compressor'),
   }
@@ -30,7 +31,7 @@ export async function getRamStats() {
     execAsync('sysctl -n hw.memsize').then(r => r.stdout.trim()),
     execAsync('memory_pressure').then(r => r.stdout),
   ])
-  const { pageSize, freePages, activePages, wiredPages, compressedPages } = parseVmStat(vmStatOut)
+  const { pageSize, freePages, activePages, inactivePages, wiredPages, compressedPages } = parseVmStat(vmStatOut)
   const total = parseInt(sysctlOut, 10)
   const wired = wiredPages * pageSize
   const compressed = compressedPages * pageSize
@@ -38,8 +39,9 @@ export async function getRamStats() {
   // Match Activity Monitor: used = wired + active + compressed
   const used = wired + active + compressed
   // Available = headroom before pressure — total minus what's actually in use
-  // (macOS keeps free pages near-zero by using them for file cache)
   const free = total - used
+  // Reclaimable = inactive file cache that purge can free immediately
+  const reclaimable = inactivePages * pageSize
   const pressureLevel = parsePressure(pressureOut)
-  return { used, free, wired, active, compressed, total, pressureLevel }
+  return { used, free, wired, active, compressed, reclaimable, total, pressureLevel }
 }
