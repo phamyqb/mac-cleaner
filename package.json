@@ -1,6 +1,6 @@
 {
   "name": "@phamyqb/mac-cleaner",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Interactive macOS storage cleanup CLI + RAM monitor GUI",
   "type": "module",
   "publishConfig": {
