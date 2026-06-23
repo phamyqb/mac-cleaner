@@ -80,7 +80,7 @@ mac-cleaner/
 Three responsibilities:
 
 1. **Tray icon** — updates every 2s with live RAM % (e.g. `64%`). Single click opens/closes the HUD window.
-2. **HUD BrowserWindow** — `transparent: true`, `frame: false`, `alwaysOnTop: true`, `vibrancy: 'under-window'` (native macOS blur). Positioned below the menu bar on first open, remembers last position across sessions.
+2. **HUD BrowserWindow** — `transparent: true`, `frame: false`, `alwaysOnTop: true`. Uses `backgroundMaterial: 'under-window'` on macOS 13+ (Ventura+) for native frosted glass; falls back to `vibrancy: 'under-window'` on older versions. Positioned below the menu bar on first open, remembers last position across sessions.
 3. **Background poller** — `setInterval` every 5s reads memory pressure level. Fires a native macOS notification on `warn` or `critical`. If auto-clean is enabled and pressure is `critical`, runs `purge` silently.
 
 ### IPC channels (main ↔ renderer via `contextBridge`)
