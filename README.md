@@ -35,6 +35,8 @@ mac-cleaner --gui  # GUI
 
 Global install works identically to `npx` — Electron and all dependencies are bundled with the package.
 
+> **Note:** The **Launch at login** setting requires a global install. When running via `npx`, the toggle is disabled because npx caches are temporary and the registered path would break after a cache clear.
+
 ## GUI features
 
 The menu bar icon shows live RAM usage (`9.2G 38%`). Click it to open the HUD:
@@ -44,7 +46,7 @@ The menu bar icon shows live RAM usage (`9.2G 38%`). Click it to open the HUD:
 | **RAM** | Live memory gauge, pressure level, top apps by usage, one-click Optimize Memory |
 | **Processes** | Process list sorted by memory, kill any process |
 | **Disk** | Disk usage bar, cache categories with sizes, auto-rescan, one-click clean |
-| **Settings** | Auto-clean threshold, auto-clean toggle, notifications, disk rescan interval |
+| **Settings** | Launch at login, auto-clean threshold, auto-clean toggle, notifications, disk rescan interval |
 
 The window appears below the menu bar icon and hides automatically when you click away.
 

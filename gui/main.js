@@ -236,7 +236,8 @@ function registerIpc() {
     return results
   })
 
-  ipcMain.handle('app:open', (_e, { name }) => execAsync(`open -a "${name}"`))
+  ipcMain.handle('app:open',    (_e, { name }) => execAsync(`open -a "${name}"`))
+  ipcMain.handle('app:version', () => app.getVersion())
 
   const isNpx = __dirname.includes('_npx') || process.execPath.includes('_npx')
 

@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('api', {
   openApp:           (name) => ipcRenderer.invoke('app:open', { name }),
   onDiskUpdate:      (cb) => on('disk:update', 'disk', cb),
   offDiskUpdate:     ()   => off('disk:update', 'disk'),
+  getVersion:        ()          => ipcRenderer.invoke('app:version'),
   getLoginItem:      ()          => ipcRenderer.invoke('login-item:get'),
   setLoginItem:      (enable)   => ipcRenderer.invoke('login-item:set', { enable }),
   getSettings:       ()    => ipcRenderer.invoke('settings:get'),

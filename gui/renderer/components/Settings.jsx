@@ -4,12 +4,13 @@ export default function Settings() {
   const [s, setS] = useState({ threshold: 75, autoclean: true, notifications: true, diskRescan: 60 })
   const [launchAtLogin, setLaunchAtLogin] = useState(false)
   const [isNpx, setIsNpx] = useState(false)
+  const [version, setVersion] = useState('')
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([window.api.getSettings(), window.api.getLoginItem()])
-      .then(([v, { openAtLogin, isNpx: npx }]) => {
-        setS(v); setLaunchAtLogin(openAtLogin); setIsNpx(npx); setLoaded(true)
+    Promise.all([window.api.getSettings(), window.api.getLoginItem(), window.api.getVersion()])
+      .then(([v, { openAtLogin, isNpx: npx }, ver]) => {
+        setS(v); setLaunchAtLogin(openAtLogin); setIsNpx(npx); setVersion(ver); setLoaded(true)
       })
   }, [])
 
@@ -87,6 +88,9 @@ export default function Settings() {
       </div>
       <div style={{ marginTop: 'auto', paddingTop: 20, fontSize: 11, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
         First Optimize prompts once to enable passwordless mode
+      </div>
+      <div style={{ paddingTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.18)', textAlign: 'center' }}>
+        mac-cleaner v{version}
       </div>
     </div>
   )
