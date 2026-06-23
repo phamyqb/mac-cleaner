@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 export default function Settings() {
-  const [s, setS] = useState({ threshold: 75, autoclean: true, notifications: true })
+  const [s, setS] = useState({ threshold: 75, autoclean: true, notifications: true, diskRescan: 60 })
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -41,6 +41,22 @@ export default function Settings() {
           className={`toggle ${s.notifications ? 'on' : ''}`}
           onClick={() => update('notifications', !s.notifications)}
         />
+      </div>
+      <div className="setting-row">
+        <div>
+          <div className="setting-label">Disk auto-rescan</div>
+          <div className="setting-value">Refresh disk sizes in background</div>
+        </div>
+        <select
+          className="setting-select"
+          value={s.diskRescan}
+          onChange={e => update('diskRescan', parseInt(e.target.value, 10))}
+        >
+          <option value={0}>Off</option>
+          <option value={30}>30s</option>
+          <option value={60}>1 min</option>
+          <option value={300}>5 min</option>
+        </select>
       </div>
       <div style={{ marginTop: 'auto', paddingTop: 20, fontSize: 11, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
         First Optimize prompts once to enable passwordless mode

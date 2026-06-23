@@ -22,10 +22,26 @@ export default function DiskCleaner() {
   const [cleaning, setCleaning] = useState(false)
   const [results, setResults] = useState([])
   const [launchingDocker, setLaunchingDocker] = useState(false)
+  const [lastScanned, setLastScanned] = useState(null)
+  const [now, setNow] = useState(Date.now())
+  const [rescanning, setRescanning] = useState(false)
   const pollRef = useRef(null)
 
   useEffect(() => {
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+    const t = setInterval(() => setNow(Date.now()), 5000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    window.api.onDiskUpdate(({ sizes: newSizes, diskInfo: newInfo }) => {
+      setSizes(newSizes)
+      setDiskInfo(newInfo)
+      setLastScanned(Date.now())
+    })
+    return () => {
+      window.api.offDiskUpdate()
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
   }, [])
 
   function openDockerAndPoll() {
@@ -58,6 +74,7 @@ export default function DiskCleaner() {
       setSizes(sizeMap)
       setDiskInfo(info)
       setDaemons(checks)
+      setLastScanned(Date.now())
       const preChecked = new Set(
         categories
           .filter(c => c.safetyLevel === 'safe' && sizeMap[c.id] > 0)
@@ -66,6 +83,23 @@ export default function DiskCleaner() {
       setSelected(preChecked)
     })
   }, [])
+
+  async function handleRescan() {
+    setRescanning(true)
+    try {
+      const [newSizes, newInfo, checks] = await Promise.all([
+        window.api.scanDisk(),
+        window.api.getDiskInfo(),
+        window.api.checkDisk(),
+      ])
+      setSizes(newSizes)
+      setDiskInfo(newInfo)
+      setDaemons(checks)
+      setLastScanned(Date.now())
+    } finally {
+      setRescanning(false)
+    }
+  }
 
   function toggle(id) {
     setSelected(prev => {
@@ -154,6 +188,14 @@ export default function DiskCleaner() {
           <div className="ram-hero" style={{ marginBottom: 6 }}>
             <span className="ram-used" style={{ fontSize: 22 }}>{fmtGB(diskInfo.used)}</span>
             <span className="ram-meta">of {fmtGB(diskInfo.total)} · {usedPct}% used</span>
+            <button
+              className="rescan-btn"
+              onClick={handleRescan}
+              disabled={rescanning}
+              title="Refresh disk sizes"
+            >
+              {rescanning ? '…' : '↻'}
+            </button>
           </div>
           <div className="gauge-bar">
             <div className="gauge-fill" style={{ width: `${usedPct}%` }} />
@@ -162,6 +204,11 @@ export default function DiskCleaner() {
             <span>Used: {fmtGB(diskInfo.used)}</span>
             <span>Free: {fmtGB(diskInfo.free)}</span>
           </div>
+          {lastScanned && (
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 4, textAlign: 'right' }}>
+              Updated {Math.round((now - lastScanned) / 1000)}s ago
+            </div>
+          )}
         </div>
       )}
 

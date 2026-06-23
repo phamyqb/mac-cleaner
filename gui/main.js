@@ -18,10 +18,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 let tray = null
 let win = null
-let settings = { threshold: 75, autoclean: true, notifications: true }
+let settings = { threshold: 75, autoclean: true, notifications: true, diskRescan: 60 }
 let lastPressure = 'normal'
 let lastAutoClean = 0
 let purgeSetupAttempted = false
+let diskPollTimer = null
 
 app.dock?.hide()
 
@@ -29,6 +30,7 @@ app.whenReady().then(async () => {
   createTray()
   await createWindow()
   startPolling()
+  startDiskPoll()
   registerIpc()
 })
 
@@ -156,6 +158,27 @@ function startPolling() {
   }, 5000)
 }
 
+async function fetchDiskInfo() {
+  const { stdout } = await execAsync(`df -k "/System/Volumes/Data" 2>/dev/null || df -k /`)
+  const parts = stdout.trim().split('\n').slice(-1)[0].trim().split(/\s+/)
+  return {
+    total: parseInt(parts[1], 10) * 1024,
+    used:  parseInt(parts[2], 10) * 1024,
+    free:  parseInt(parts[3], 10) * 1024,
+  }
+}
+
+function startDiskPoll() {
+  if (diskPollTimer) { clearInterval(diskPollTimer); diskPollTimer = null }
+  if (!settings.diskRescan) return
+  diskPollTimer = setInterval(async () => {
+    try {
+      const [sizes, diskInfo] = await Promise.all([scanAll(categories), fetchDiskInfo()])
+      win?.webContents.send('disk:update', { sizes, diskInfo })
+    } catch {}
+  }, settings.diskRescan * 1000)
+}
+
 async function runPurge() {
   // Try passwordless first (works if sudoers entry already exists)
   try { await execAsync('sudo -n purge'); return } catch {}
@@ -198,20 +221,7 @@ function registerIpc() {
     categories.map(({ id, label, description, safetyLevel }) => ({ id, label, description, safetyLevel }))
   )
 
-  ipcMain.handle('disk:info', async () => {
-    // On APFS macOS, / is the read-only System volume (~10GB).
-    // User data lives on /System/Volumes/Data — fall back to / on older macOS.
-    const target = '/System/Volumes/Data'
-    const cmd = `df -k "${target}" 2>/dev/null || df -k /`
-    const { stdout } = await execAsync(cmd)
-    const parts = stdout.trim().split('\n').slice(-1)[0].trim().split(/\s+/)
-    // df -k columns: Filesystem 1K-blocks Used Available Capacity ...
-    return {
-      total: parseInt(parts[1], 10) * 1024,
-      used:  parseInt(parts[2], 10) * 1024,
-      free:  parseInt(parts[3], 10) * 1024,
-    }
-  })
+  ipcMain.handle('disk:info', () => fetchDiskInfo())
 
   ipcMain.handle('disk:clean', async (_e, { ids }) => {
     const results = []
@@ -231,9 +241,13 @@ function registerIpc() {
   ipcMain.handle('settings:get', () => ({ ...settings }))
 
   ipcMain.handle('settings:set', (_e, incoming) => {
-    const { threshold, autoclean, notifications } = incoming
+    const { threshold, autoclean, notifications, diskRescan } = incoming
     if (typeof threshold === 'number') settings.threshold = Math.min(90, Math.max(60, threshold))
     if (typeof autoclean === 'boolean') settings.autoclean = autoclean
     if (typeof notifications === 'boolean') settings.notifications = notifications
+    if (typeof diskRescan === 'number') {
+      settings.diskRescan = diskRescan
+      startDiskPoll()
+    }
   })
 }

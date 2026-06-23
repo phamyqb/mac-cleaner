@@ -106,6 +106,29 @@ html, body, #root {
 }
 .clean-btn:hover { opacity: 0.85; }
 .clean-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.rescan-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+  line-height: 1;
+  -webkit-app-region: no-drag;
+}
+.rescan-btn:hover { color: rgba(255,255,255,0.8); }
+.rescan-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.setting-select {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.setting-select option { background: #1e1e1e; }
 .optimize-hint {
   display: flex;
   align-items: center;
