@@ -13,7 +13,6 @@ export default function RamGauge() {
   const [processesLoaded, setProcessesLoaded] = useState(false)
   const [cleaning, setCleaning] = useState(false)
   const [toast, setToast] = useState(null)
-  const [justOptimized, setJustOptimized] = useState(false)
   const statsRef = useRef(null)
 
   useEffect(() => {
@@ -23,23 +22,28 @@ export default function RamGauge() {
   }, [])
 
   async function handleClean() {
-    // Snapshot inactive cache now — this is exactly what purge will free
-    const reclaimableBefore = statsRef.current?.reclaimable ?? 0
+    const usedBefore = statsRef.current?.used ?? stats.used
+    const cacheBefore = statsRef.current?.reclaimable ?? 0
+
     setCleaning(true)
     setToast(null)
     try {
       await window.api.cleanRam()
-      const freed = reclaimableBefore > 50 * 1024 * 1024
-        ? ` · ~${fmtGB(reclaimableBefore)} freed`
-        : ''
-      setToast(`Memory optimized${freed}`)
-      setJustOptimized(true)
-      setTimeout(() => setJustOptimized(false), 8000)
+      // Wait one full poll cycle (2s) for stats to reflect the freed memory
+      setTimeout(() => {
+        const usedAfter = statsRef.current?.used ?? usedBefore
+        const freedRAM  = Math.max(0, usedBefore - usedAfter)
+        const parts = []
+        if (freedRAM   > 20  * 1024 * 1024) parts.push(`${fmtGB(freedRAM)} RAM freed`)
+        if (cacheBefore > 50 * 1024 * 1024) parts.push(`${fmtGB(cacheBefore)} cache flushed`)
+        setToast(parts.length ? parts.join(' · ') : 'Memory optimized')
+        setTimeout(() => setToast(null), 6000)
+      }, 2500)
     } catch {
       setToast('Cancelled')
+      setTimeout(() => setToast(null), 3000)
     } finally {
       setCleaning(false)
-      setTimeout(() => setToast(null), 5000)
     }
   }
 
@@ -47,8 +51,7 @@ export default function RamGauge() {
 
   const usedPct = Math.round((stats.used / stats.total) * 100)
   const topApps = processes.slice(0, 5)
-  const maxMem = topApps[0]?.memMB || 1
-  const showHint = !justOptimized && stats.reclaimable > 50 * 1024 * 1024
+  const maxMem  = topApps[0]?.memMB || 1
 
   return (
     <div>
@@ -73,9 +76,7 @@ export default function RamGauge() {
       <div className="ram-apps">
         <div className="disk-section-label" style={{ marginTop: 0, marginBottom: 8 }}>Top Apps</div>
         {!processesLoaded ? (
-          <div className="apps-spinner">
-            <div className="spinner" />
-          </div>
+          <div className="apps-spinner"><div className="spinner" /></div>
         ) : topApps.map(p => (
           <div key={p.pid} className="ram-app-row">
             <span className="ram-app-name">{p.name}</span>
@@ -87,10 +88,7 @@ export default function RamGauge() {
         ))}
       </div>
 
-      {showHint && (
-        <div className="recoverable-hint">~{fmtGB(stats.reclaimable)} recoverable</div>
-      )}
-      <button className="clean-btn" style={{ marginTop: showHint ? 6 : 14 }} onClick={handleClean} disabled={cleaning}>
+      <button className="clean-btn" style={{ marginTop: 14 }} onClick={handleClean} disabled={cleaning}>
         {cleaning ? 'Optimizing...' : 'Optimize Memory'}
       </button>
       {toast && <div className="toast">{toast}</div>}

@@ -128,13 +128,6 @@ html, body, #root {
 }
 .apps-spinner { text-align: center; padding: 4px 0 8px; }
 
-/* Recoverable hint above button */
-.recoverable-hint {
-  text-align: center;
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-}
-
 /* Top apps mini-list (RAM tab) */
 .ram-apps { margin-bottom: 6px; }
 .ram-app-row {
