@@ -238,6 +238,19 @@ function registerIpc() {
 
   ipcMain.handle('app:open', (_e, { name }) => execAsync(`open -a "${name}"`))
 
+  ipcMain.handle('login-item:get', () =>
+    app.getLoginItemSettings().openAtLogin
+  )
+
+  ipcMain.handle('login-item:set', (_e, { enable }) => {
+    app.setLoginItemSettings({
+      openAtLogin: enable,
+      openAsHidden: true,   // no dock bounce, no terminal
+      path: process.execPath,
+      args: [join(__dirname, 'main.js')],
+    })
+  })
+
   ipcMain.handle('settings:get', () => ({ ...settings }))
 
   ipcMain.handle('settings:set', (_e, incoming) => {

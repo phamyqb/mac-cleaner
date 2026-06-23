@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react'
 
 export default function Settings() {
   const [s, setS] = useState({ threshold: 75, autoclean: true, notifications: true, diskRescan: 60 })
+  const [launchAtLogin, setLaunchAtLogin] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    window.api.getSettings().then(v => { setS(v); setLoaded(true) })
+    Promise.all([window.api.getSettings(), window.api.getLoginItem()])
+      .then(([v, login]) => { setS(v); setLaunchAtLogin(login); setLoaded(true) })
   }, [])
+
+  function toggleLogin(val) {
+    setLaunchAtLogin(val)
+    window.api.setLoginItem(val)
+  }
 
   function update(key, value) {
     const next = { ...s, [key]: value }
@@ -18,6 +25,16 @@ export default function Settings() {
 
   return (
     <div className="settings">
+      <div className="setting-row">
+        <div>
+          <div className="setting-label">Launch at login</div>
+          <div className="setting-value">Start in menu bar on login</div>
+        </div>
+        <button
+          className={`toggle ${launchAtLogin ? 'on' : ''}`}
+          onClick={() => toggleLogin(!launchAtLogin)}
+        />
+      </div>
       <div className="setting-row">
         <div>
           <div className="setting-label">Auto-clean threshold</div>
