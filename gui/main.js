@@ -1,0 +1,168 @@
+import {
+  app, BrowserWindow, Tray, nativeImage,
+  ipcMain, Notification, screen,
+} from 'electron'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+import { release } from 'node:os'
+import { getRamStats } from '../src/ram/stats.js'
+import { getTopProcesses } from '../src/ram/processes.js'
+import { scanAll } from '../src/scanner.js'
+import { cleaners } from '../src/cleaners.js'
+import { categories } from '../src/categories.js'
+
+const execAsync = promisify(exec)
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+let tray = null
+let win = null
+let settings = { threshold: 75, autoclean: true, notifications: true }
+let lastPressure = 'normal'
+
+app.dock?.hide()
+
+app.whenReady().then(async () => {
+  createTray()
+  await createWindow()
+  startPolling()
+  registerIpc()
+})
+
+app.on('window-all-closed', (e) => e.preventDefault())
+
+function createTray() {
+  tray = new Tray(nativeImage.createEmpty())
+  tray.setTitle(' --')
+  tray.on('click', toggleWindow)
+}
+
+async function createWindow() {
+  const { workArea } = screen.getPrimaryDisplay()
+  const darwinMajor = parseInt(release().split('.')[0], 10)
+
+  const opts = {
+    width: 360,
+    height: 520,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    show: false,
+    webPreferences: {
+      preload: join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  }
+
+  if (darwinMajor >= 22) {
+    opts.backgroundMaterial = 'under-window'
+  } else {
+    opts.vibrancy = 'under-window'
+  }
+
+  win = new BrowserWindow(opts)
+  await win.loadFile(join(__dirname, '../dist/renderer/index.html'))
+  win.setPosition(workArea.x + workArea.width - 380, workArea.y + 4)
+}
+
+function toggleWindow() {
+  if (!win) return
+  if (win.isVisible()) {
+    win.hide()
+  } else {
+    win.show()
+    win.focus()
+  }
+}
+
+function startPolling() {
+  setInterval(async () => {
+    try {
+      const stats = await getRamStats()
+      const pct = Math.round((stats.used / stats.total) * 100)
+      tray.setTitle(` ${pct}%`)
+      win?.webContents.send('ram:stats', stats)
+    } catch {}
+  }, 2000)
+
+  setInterval(async () => {
+    try {
+      const procs = await getTopProcesses()
+      win?.webContents.send('ram:processes', procs)
+    } catch {}
+  }, 5000)
+
+  setInterval(async () => {
+    try {
+      const stats = await getRamStats()
+      const pct = Math.round((stats.used / stats.total) * 100)
+
+      if (stats.pressureLevel !== lastPressure) {
+        lastPressure = stats.pressureLevel
+
+        if (settings.notifications) {
+          if (stats.pressureLevel === 'warn') {
+            new Notification({ title: 'mac-cleaner', body: 'Memory pressure is high' }).show()
+          } else if (stats.pressureLevel === 'critical') {
+            if (settings.autoclean) {
+              await runPurge()
+              new Notification({ title: 'mac-cleaner', body: 'Memory cleaned automatically' }).show()
+            } else {
+              new Notification({
+                title: 'mac-cleaner',
+                body: 'Memory pressure is critical — open mac-cleaner to clean',
+              }).show()
+            }
+          }
+        }
+      }
+
+      if (pct >= settings.threshold && settings.autoclean) {
+        await runPurge()
+      }
+    } catch {}
+  }, 5000)
+}
+
+async function runPurge() {
+  await execAsync(`osascript -e 'do shell script "purge" with administrator privileges'`)
+}
+
+function registerIpc() {
+  ipcMain.handle('ram:clean', async () => {
+    await runPurge()
+  })
+
+  ipcMain.handle('process:kill', async (_e, { pid }) => {
+    await execAsync(`kill -9 ${pid}`)
+  })
+
+  ipcMain.handle('disk:scan', () => scanAll(categories))
+
+  ipcMain.handle('disk:categories', () =>
+    categories.map(({ id, label, description, safetyLevel }) => ({ id, label, description, safetyLevel }))
+  )
+
+  ipcMain.handle('disk:clean', async (_e, { ids }) => {
+    const results = []
+    for (const id of ids) {
+      try {
+        await cleaners[id]()
+        results.push({ id, status: 'cleared' })
+      } catch (e) {
+        results.push({ id, status: 'failed', error: e.message.split('\n')[0] })
+      }
+    }
+    return results
+  })
+
+  ipcMain.handle('settings:get', () => ({ ...settings }))
+
+  ipcMain.handle('settings:set', (_e, incoming) => {
+    settings = { ...settings, ...incoming }
+  })
+}
