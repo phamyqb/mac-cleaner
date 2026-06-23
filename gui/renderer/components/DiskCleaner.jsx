@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 function fmtGB(bytes) {
   if (!bytes) return null
@@ -21,6 +21,31 @@ export default function DiskCleaner() {
   const [selected, setSelected] = useState(new Set())
   const [cleaning, setCleaning] = useState(false)
   const [results, setResults] = useState([])
+  const [launchingDocker, setLaunchingDocker] = useState(false)
+  const pollRef = useRef(null)
+
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [])
+
+  function openDockerAndPoll() {
+    window.api.openApp?.('Docker')
+    setLaunchingDocker(true)
+    if (pollRef.current) clearInterval(pollRef.current)
+    let attempts = 0
+    pollRef.current = setInterval(async () => {
+      attempts++
+      if (attempts > 20) { clearInterval(pollRef.current); setLaunchingDocker(false); return }
+      const checks = await window.api.checkDisk()
+      if (checks.docker) {
+        clearInterval(pollRef.current)
+        setLaunchingDocker(false)
+        setDaemons(checks)
+        const [newSizes] = await Promise.all([window.api.scanDisk()])
+        setSizes(newSizes)
+      }
+    }, 3000)
+  }
 
   useEffect(() => {
     Promise.all([
@@ -93,13 +118,14 @@ export default function DiskCleaner() {
                 {c.label}
                 {offline
                   ? <span className="disk-item-desc disk-item-warn">
-                      ⚠ Docker not running —{' '}
-                      <span
-                        className="disk-item-link"
-                        onClick={e => { e.preventDefault(); window.api.openApp?.('Docker') }}
-                      >
-                        open Docker Desktop
-                      </span>
+                      {launchingDocker
+                        ? '⏳ Starting Docker Desktop...'
+                        : <>⚠ Docker not running —{' '}
+                            <span className="disk-item-link" onClick={openDockerAndPoll}>
+                              open Docker Desktop
+                            </span>
+                          </>
+                      }
                     </span>
                   : c.description && <span className="disk-item-desc">{c.description}</span>
                 }
