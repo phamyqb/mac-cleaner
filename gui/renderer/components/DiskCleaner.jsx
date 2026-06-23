@@ -79,7 +79,10 @@ export default function DiskCleaner() {
                 checked={selected.has(c.id)}
                 onChange={() => toggle(c.id)}
               />
-              <span className="disk-item-label">{c.label}</span>
+              <span className="disk-item-label">
+                {c.label}
+                {c.description && <span className="disk-item-desc">{c.description}</span>}
+              </span>
               <span className="disk-item-size">
                 {res ? (res.status === 'cleared' ? '✓ cleared' : '✗ failed') : size}
               </span>

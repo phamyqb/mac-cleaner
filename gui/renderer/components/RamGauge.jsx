@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 const PRESSURE_COLOR = { normal: '#30d158', warn: '#ffd60a', critical: '#ff453a' }
 
@@ -10,32 +10,36 @@ function fmtGB(bytes) {
 export default function RamGauge() {
   const [stats, setStats] = useState(null)
   const [processes, setProcesses] = useState([])
+  const [processesLoaded, setProcessesLoaded] = useState(false)
   const [cleaning, setCleaning] = useState(false)
   const [toast, setToast] = useState(null)
   const [justOptimized, setJustOptimized] = useState(false)
+  const statsRef = useRef(null)
 
   useEffect(() => {
-    window.api.onRamStats(setStats)
-    window.api.onRamProcesses(setProcesses)
-    return () => {
-      window.api.offRamStats()
-      window.api.offRamProcesses()
-    }
+    window.api.onRamStats((data) => { setStats(data); statsRef.current = data })
+    window.api.onRamProcesses((data) => { setProcesses(data); setProcessesLoaded(true) })
+    return () => { window.api.offRamStats(); window.api.offRamProcesses() }
   }, [])
 
   async function handleClean() {
+    // Snapshot inactive cache now — this is exactly what purge will free
+    const reclaimableBefore = statsRef.current?.reclaimable ?? 0
     setCleaning(true)
     setToast(null)
     try {
       await window.api.cleanRam()
-      setToast('Memory optimized')
+      const freed = reclaimableBefore > 50 * 1024 * 1024
+        ? ` · ~${fmtGB(reclaimableBefore)} freed`
+        : ''
+      setToast(`Memory optimized${freed}`)
       setJustOptimized(true)
       setTimeout(() => setJustOptimized(false), 8000)
     } catch {
       setToast('Cancelled')
     } finally {
       setCleaning(false)
-      setTimeout(() => setToast(null), 3000)
+      setTimeout(() => setToast(null), 5000)
     }
   }
 
@@ -44,6 +48,7 @@ export default function RamGauge() {
   const usedPct = Math.round((stats.used / stats.total) * 100)
   const topApps = processes.slice(0, 5)
   const maxMem = topApps[0]?.memMB || 1
+  const showHint = !justOptimized && stats.reclaimable > 50 * 1024 * 1024
 
   return (
     <div>
@@ -65,32 +70,28 @@ export default function RamGauge() {
         <div><span>Available</span><span title="Free RAM — immediately usable">{fmtGB(stats.free)}</span></div>
       </div>
 
-      {topApps.length > 0 && (
-        <div className="ram-apps">
-          <div className="disk-section-label" style={{ marginTop: 0, marginBottom: 8 }}>Top Apps</div>
-          {topApps.map(p => (
-            <div key={p.pid} className="ram-app-row">
-              <span className="ram-app-name">{p.name}</span>
-              <div className="ram-app-bar">
-                <div style={{ width: `${(p.memMB / maxMem) * 100}%` }} />
-              </div>
-              <span className="ram-app-mem">{p.memMB >= 1024 ? `${(p.memMB/1024).toFixed(1)}G` : `${p.memMB}M`}</span>
+      <div className="ram-apps">
+        <div className="disk-section-label" style={{ marginTop: 0, marginBottom: 8 }}>Top Apps</div>
+        {!processesLoaded ? (
+          <div className="apps-spinner">
+            <div className="spinner" />
+          </div>
+        ) : topApps.map(p => (
+          <div key={p.pid} className="ram-app-row">
+            <span className="ram-app-name">{p.name}</span>
+            <div className="ram-app-bar">
+              <div style={{ width: `${(p.memMB / maxMem) * 100}%` }} />
             </div>
-          ))}
-        </div>
-      )}
+            <span className="ram-app-mem">{p.memMB >= 1024 ? `${(p.memMB/1024).toFixed(1)}G` : `${p.memMB}M`}</span>
+          </div>
+        ))}
+      </div>
 
-      <button className="clean-btn" style={{ marginTop: 14 }} onClick={handleClean} disabled={cleaning}>
-        {cleaning ? 'Optimizing...' : (
-          <>
-            Optimize Memory
-            {!justOptimized && stats.reclaimable > 50 * 1024 * 1024 && (
-              <span className="clean-btn-hint">
-                ~{fmtGB(stats.reclaimable)} recoverable
-              </span>
-            )}
-          </>
-        )}
+      {showHint && (
+        <div className="recoverable-hint">~{fmtGB(stats.reclaimable)} recoverable</div>
+      )}
+      <button className="clean-btn" style={{ marginTop: showHint ? 6 : 14 }} onClick={handleClean} disabled={cleaning}>
+        {cleaning ? 'Optimizing...' : 'Optimize Memory'}
       </button>
       {toast && <div className="toast">{toast}</div>}
     </div>
