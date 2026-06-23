@@ -12,8 +12,7 @@ export default function RamGauge() {
   const [processes, setProcesses] = useState([])
   const [processesLoaded, setProcessesLoaded] = useState(false)
   const [cleaning, setCleaning] = useState(false)
-  const [result, setResult] = useState(null)      // current result (shows for 10s)
-  const [lastResult, setLastResult] = useState(null) // persists as reference for next click
+  const [result, setResult] = useState(null)  // actual result, shows for 10s then clears
   const statsRef = useRef(null)
 
   useEffect(() => {
@@ -34,9 +33,7 @@ export default function RamGauge() {
       setTimeout(() => {
         const usedAfter = statsRef.current?.used ?? usedBefore
         const ramFreed  = Math.max(0, usedBefore - usedAfter)
-        const r = { ramFreed, cacheFreed: cacheBefore }
-        setResult(r)
-        setLastResult(r)
+        setResult({ ramFreed, cacheFreed: cacheBefore })
         setCleaning(false)
         setTimeout(() => setResult(null), 10000)
       }, 2500)
@@ -89,25 +86,22 @@ export default function RamGauge() {
       </div>
 
       <div className="optimize-hint">
-        {cleaning ? null
-          : result?.error ? <span style={{ color: '#ff453a' }}>Cancelled</span>
-          : (() => {
-              const r = result ?? lastResult
-              if (!r) return null
-              const isLast = !result && lastResult
-              return (
-                <>
-                  <span style={{ color: isLast ? 'rgba(255,255,255,0.3)' : '#30d158' }}>✓</span>
-                  {r.ramFreed > 20 * 1024 * 1024
-                    ? <><strong>{fmtGB(r.ramFreed)}</strong> RAM freed</>
+        {cleaning
+          ? null
+          : result?.error
+            ? <span style={{ color: '#ff453a' }}>Cancelled</span>
+            : result
+              ? <>
+                  <span style={{ color: '#30d158' }}>✓</span>
+                  {result.ramFreed > 20 * 1024 * 1024
+                    ? <><strong>{fmtGB(result.ramFreed)}</strong> RAM freed</>
                     : 'RAM freed: minimal'}
-                  {r.cacheFreed > 50 * 1024 * 1024 && (
-                    <span className="optimize-hint-sub">+ {fmtGB(r.cacheFreed)} cache flushed</span>
-                  )}
-                  {isLast && <span className="optimize-hint-sub">(last run)</span>}
+                  {result.cacheFreed > 50 * 1024 * 1024 &&
+                    <span className="optimize-hint-sub">+ {fmtGB(result.cacheFreed)} cache flushed</span>}
                 </>
-              )
-            })()}
+              : stats.compressed > 20 * 1024 * 1024
+                ? <span>~<strong>{fmtGB(stats.compressed)}</strong> may be freed</span>
+                : null}
       </div>
       <button className="clean-btn" onClick={handleClean} disabled={cleaning}>
         {cleaning ? 'Optimizing...' : 'Optimize Memory'}
