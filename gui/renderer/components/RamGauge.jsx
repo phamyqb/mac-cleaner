@@ -34,9 +34,11 @@ export default function RamGauge() {
         const usedAfter = statsRef.current?.used ?? usedBefore
         const ramFreed  = Math.max(0, usedBefore - usedAfter)
         setResult({ ramFreed, cacheFreed: cacheBefore })
+        setTimeout(() => setResult(null), 10000)
       }, 2500)
     } catch {
       setResult({ error: true })
+      setTimeout(() => setResult(null), 3000)
     } finally {
       setCleaning(false)
     }
