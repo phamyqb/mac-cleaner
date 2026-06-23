@@ -1,11 +1,30 @@
 'use strict'
 const { contextBridge, ipcRenderer } = require('electron')
 
+// Named handlers so each component can remove only its own listener
+const handlers = {}
+
+function on(channel, id, cb) {
+  const handler = (_e, d) => cb(d)
+  handlers[`${channel}:${id}`] = handler
+  ipcRenderer.on(channel, handler)
+}
+
+function off(channel, id) {
+  const key = `${channel}:${id}`
+  if (handlers[key]) {
+    ipcRenderer.removeListener(channel, handlers[key])
+    delete handlers[key]
+  }
+}
+
 contextBridge.exposeInMainWorld('api', {
-  onRamStats:        (cb) => ipcRenderer.on('ram:stats',      (_e, d) => cb(d)),
-  onRamProcesses:    (cb) => ipcRenderer.on('ram:processes',  (_e, d) => cb(d)),
-  offRamStats:       () => ipcRenderer.removeAllListeners('ram:stats'),
-  offRamProcesses:   () => ipcRenderer.removeAllListeners('ram:processes'),
+  onRamStats:        (cb) => on('ram:stats',     'stats', cb),
+  onRamProcesses:    (cb) => on('ram:processes', 'gauge', cb),
+  onRamProcessesList:(cb) => on('ram:processes', 'list',  cb),
+  offRamStats:       () => off('ram:stats',     'stats'),
+  offRamProcesses:   () => off('ram:processes', 'gauge'),
+  offRamProcessesList: () => off('ram:processes', 'list'),
   cleanRam:          ()    => ipcRenderer.invoke('ram:clean'),
   killProcess:       (pid) => ipcRenderer.invoke('process:kill', { pid }),
   scanDisk:          ()    => ipcRenderer.invoke('disk:scan'),

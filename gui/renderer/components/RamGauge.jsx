@@ -9,12 +9,17 @@ function fmtGB(bytes) {
 
 export default function RamGauge() {
   const [stats, setStats] = useState(null)
+  const [processes, setProcesses] = useState([])
   const [cleaning, setCleaning] = useState(false)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
     window.api.onRamStats(setStats)
-    return () => window.api.offRamStats()
+    window.api.onRamProcesses(setProcesses)
+    return () => {
+      window.api.offRamStats()
+      window.api.offRamProcesses()
+    }
   }, [])
 
   async function handleClean() {
@@ -34,6 +39,8 @@ export default function RamGauge() {
   if (!stats) return <div className="loading">Waiting for data...</div>
 
   const usedPct = Math.round((stats.used / stats.total) * 100)
+  const topApps = processes.slice(0, 5)
+  const maxMem = topApps[0]?.memMB || 1
 
   return (
     <div>
@@ -54,6 +61,22 @@ export default function RamGauge() {
         <div className="breakdown-separator" />
         <div><span>Available</span><span title="Free RAM — immediately usable">{fmtGB(stats.free)}</span></div>
       </div>
+
+      {topApps.length > 0 && (
+        <div className="ram-apps">
+          <div className="disk-section-label" style={{ marginTop: 0, marginBottom: 8 }}>Top Apps</div>
+          {topApps.map(p => (
+            <div key={p.pid} className="ram-app-row">
+              <span className="ram-app-name">{p.name}</span>
+              <div className="ram-app-bar">
+                <div style={{ width: `${(p.memMB / maxMem) * 100}%` }} />
+              </div>
+              <span className="ram-app-mem">{p.memMB >= 1024 ? `${(p.memMB/1024).toFixed(1)}G` : `${p.memMB}M`}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <button className="clean-btn" onClick={handleClean} disabled={cleaning}>
         {cleaning ? 'Optimizing...' : 'Optimize Memory'}
       </button>
