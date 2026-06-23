@@ -69,6 +69,11 @@ async function createWindow() {
   win = new BrowserWindow(opts)
   await win.loadFile(join(__dirname, '../dist/renderer/index.html'))
   win.setAlwaysOnTop(true, 'floating')
+
+  // Hide when focus moves elsewhere (unless DevTools is open)
+  win.on('blur', () => {
+    if (!win.webContents.isDevToolsFocused()) win.hide()
+  })
 }
 
 function toggleWindow() {
@@ -188,9 +193,13 @@ function registerIpc() {
   )
 
   ipcMain.handle('disk:info', async () => {
-    const { stdout } = await execAsync('df -k /')
-    const parts = stdout.trim().split('\n')[1].trim().split(/\s+/)
-    // df -k /: Filesystem 1K-blocks Used Available Capacity ...
+    // On APFS macOS, / is the read-only System volume (~10GB).
+    // User data lives on /System/Volumes/Data — fall back to / on older macOS.
+    const target = '/System/Volumes/Data'
+    const cmd = `df -k "${target}" 2>/dev/null || df -k /`
+    const { stdout } = await execAsync(cmd)
+    const parts = stdout.trim().split('\n').slice(-1)[0].trim().split(/\s+/)
+    // df -k columns: Filesystem 1K-blocks Used Available Capacity ...
     return {
       total: parseInt(parts[1], 10) * 1024,
       used:  parseInt(parts[2], 10) * 1024,

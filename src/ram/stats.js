@@ -32,12 +32,14 @@ export async function getRamStats() {
   ])
   const { pageSize, freePages, activePages, wiredPages, compressedPages } = parseVmStat(vmStatOut)
   const total = parseInt(sysctlOut, 10)
-  const free = freePages * pageSize
   const wired = wiredPages * pageSize
   const compressed = compressedPages * pageSize
   const active = activePages * pageSize
-  // Match Activity Monitor: used = wired + active + compressed (excludes reclaimable inactive)
+  // Match Activity Monitor: used = wired + active + compressed
   const used = wired + active + compressed
+  // Available = headroom before pressure — total minus what's actually in use
+  // (macOS keeps free pages near-zero by using them for file cache)
+  const free = total - used
   const pressureLevel = parsePressure(pressureOut)
   return { used, free, wired, active, compressed, total, pressureLevel }
 }
