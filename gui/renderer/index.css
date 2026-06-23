@@ -106,6 +106,12 @@ html, body, #root {
 }
 .clean-btn:hover { opacity: 0.85; }
 .clean-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.cache-hint {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 14px;
+}
 .toast {
   margin-top: 10px;
   padding: 8px 12px;
