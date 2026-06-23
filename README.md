@@ -2,11 +2,13 @@
 
 macOS storage and memory cleanup tool — available as a **menu bar GUI** or a **terminal CLI**.
 
-<!-- Replace these with real screenshots once taken — see "Adding screenshots" below -->
-<!--
-![RAM tab](https://raw.githubusercontent.com/phamyqb/mac-cleaner/master/screenshots/ram.png)
-![Disk tab](https://raw.githubusercontent.com/phamyqb/mac-cleaner/master/screenshots/disk.png)
--->
+<table>
+  <tr>
+    <td align="center"><img src="https://raw.githubusercontent.com/phamyqb/mac-cleaner/master/screenshots/ram.png" width="220" alt="RAM tab"/><br/><sub>RAM monitor</sub></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/phamyqb/mac-cleaner/master/screenshots/disk.png" width="220" alt="Disk tab"/><br/><sub>Disk cleaner</sub></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/phamyqb/mac-cleaner/master/screenshots/settings.png" width="220" alt="Settings tab"/><br/><sub>Settings</sub></td>
+  </tr>
+</table>
 
 ## Quick start (no install)
 
@@ -62,21 +64,6 @@ Space to toggle items, Enter to confirm.
 
 - Green `[safe]` — caches regenerated automatically
 - Yellow `[situational]` — asks for confirmation
-
-## Adding screenshots
-
-Screenshots must use absolute URLs to display on both GitHub and npmjs.com.
-
-1. Take screenshots (Command+Shift+4 on macOS)
-2. Create a `screenshots/` folder in the repo root
-3. Commit and push the images to GitHub
-4. Reference them with the raw GitHub URL:
-
-```markdown
-![RAM tab](https://raw.githubusercontent.com/phamyqb/mac-cleaner/master/screenshots/ram.png)
-```
-
-Replace `phamyqb/mac-cleaner` with your GitHub username/repo. Relative paths like `./screenshots/ram.png` work on GitHub but show broken images on npmjs.com.
 
 ## Development
 
