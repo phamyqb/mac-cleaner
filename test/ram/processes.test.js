@@ -28,6 +28,13 @@ test('parsePs: includes process name', () => {
   assert.equal(slack.name, 'Slack')
 })
 
+test('parsePs: captures multi-word process names', () => {
+  const results = parsePs(PS_FIXTURE)
+  const chrome = results.find(p => p.pid === 12345)
+  assert.ok(chrome)
+  assert.equal(chrome.name, 'Google Chrome Helper')
+})
+
 test('parsePs: returns at most 8 results', () => {
   const many = Array.from({ length: 20 }, (_, i) =>
     `${i + 1} proc${i + 1} ${(i + 1) * 1000}`

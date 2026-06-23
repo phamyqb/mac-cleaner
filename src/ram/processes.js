@@ -10,7 +10,7 @@ export function parsePs(output) {
       const parts = line.trim().split(/\s+/)
       if (parts.length < 3) return null
       const pid = parseInt(parts[0], 10)
-      const name = parts[1]
+      const name = parts.slice(1, -1).join(' ')
       const rss = parseInt(parts[parts.length - 1], 10)
       if (isNaN(pid) || pid <= 0 || isNaN(rss) || rss === 0) return null
       return { pid, name, memMB: Math.round(rss / 1024) }
