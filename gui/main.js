@@ -20,6 +20,7 @@ let tray = null
 let win = null
 let settings = { threshold: 75, autoclean: true, notifications: true }
 let lastPressure = 'normal'
+let lastAutoClean = 0  // timestamp — prevents repeated purge every 5s
 
 app.dock?.hide()
 
@@ -110,6 +111,7 @@ function startPolling() {
           } else if (stats.pressureLevel === 'critical') {
             if (settings.autoclean) {
               try {
+                lastAutoClean = Date.now()
                 await runPurge()
                 new Notification({ title: 'mac-cleaner', body: 'Memory cleaned automatically' }).show()
               } catch {
@@ -125,8 +127,15 @@ function startPolling() {
         }
       }
 
-      if (pct >= settings.threshold && settings.autoclean) {
-        await runPurge()
+      const cooldown = 5 * 60 * 1000  // 5 minutes between auto-cleans
+      if (pct >= settings.threshold && settings.autoclean && Date.now() - lastAutoClean > cooldown) {
+        lastAutoClean = Date.now()
+        try {
+          await runPurge()
+          if (settings.notifications) {
+            new Notification({ title: 'mac-cleaner', body: 'Memory cleaned automatically' }).show()
+          }
+        } catch {}
       }
     } catch {}
   }, 5000)
